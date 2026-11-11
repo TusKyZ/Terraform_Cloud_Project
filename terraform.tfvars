@@ -1,0 +1,14 @@
+alb_deletion_protection = true # false only for a throwaway deploy
+app_subnet_cidrs        = ["10.0.11.0/24", "10.0.12.0/24"]
+aws_region              = "ap-southeast-3" # Jakarta: closest to the schools' visitors, and the database, servers and backups stay in Indonesia
+azs                     = ["ap-southeast-3a", "ap-southeast-3b"]
+db_deletion_protection  = true  # false only for a throwaway deploy
+db_skip_final_snapshot  = false # true only for a throwaway deploy
+db_subnet_cidrs         = ["10.0.21.0/24", "10.0.22.0/24"]
+domain_name             = "webschool.example" # placeholder: set the school's real domain before applying
+environment             = "prod"
+owner                   = "Example School Group"
+project                 = "web-school"
+public_subnet_cidrs     = ["10.0.1.0/24", "10.0.2.0/24"]
+vpc_cidr                = "10.0.0.0/16"
+wordpress_image         = "public.ecr.aws/docker/library/wordpress:7.1.3-php8.3-apache" # Docker's official image, mirrored on ECR Public

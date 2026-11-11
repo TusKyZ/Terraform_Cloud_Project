@@ -1,0 +1,2 @@
+# LF everywhere, whatever core.autocrlf says: a CRLF user_data script fails at boot.
+* text=auto eol=lf

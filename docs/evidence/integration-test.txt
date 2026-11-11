@@ -1,0 +1,57 @@
+Local Docker test of the compute module's user_data
+Run on 2026-10-30 06:04 UTC, Docker Engine 28.3.3
+Image: mysql@sha256:a0225d1ea6631c8bc2385dc4c2faba17bbf1834ecf369e1659a9a382bd8d5dd7
+Image: amazonlinux@sha256:c04a1012acc483977f61f7f91c28624a39a621e56a59781319a75dec528be9b6
+Image: public.ecr.aws/docker/library/wordpress@sha256:8901759bfbb7ebc567dbc44a244c0d96d720d0a67c17bc4f42ec355ddba2e863
+
+== user_data
+PASS user_data is valid bash
+PASS the secrets script is valid bash
+PASS the control copy has no MYSQL_CLIENT_FLAGS
+== MySQL 8.4, standing in for RDS
+PASS MySQL requires TLS for every connection
+== Amazon Linux 2023: packages, systemd units and the secrets script
+PASS dnf installs jq and docker
+PASS systemd accepts the three units
+PASS the secrets script runs as root
+PASS it writes 10 files owned by uid 33 with mode 0400
+== WordPress: public.ecr.aws/docker/library/wordpress:7.1.3-php8.3-apache
+PASS WordPress reaches MySQL over TLS: the home page redirects to the installer
+PASS WORDPRESS_CONFIG_EXTRA is valid PHP with the site address, TLS and no file changes
+PASS the web server user reads a key from its file
+PASS another user cannot read the secret files
+PASS the secrets folder is read-only in the container
+PASS the container's environment has 10 _FILE settings and no secret value
+== Control: the same WordPress without MYSQL_CLIENT_FLAGS
+PASS MySQL refuses WordPress without TLS (HTTP 500)
+== Password rotation without a restart
+PASS with the old password file, WordPress fails
+PASS the secrets script writes the new password
+PASS WordPress works again
+PASS the container was not restarted
+== A bad fetch keeps the old files
+PASS the AWS CLI fails: the script stops
+PASS the AWS CLI fails: every old file stays
+PASS the AWS CLI fails: no staging folder is left
+PASS the AWS CLI prints nothing: the script stops
+PASS the AWS CLI prints nothing: every old file stays
+PASS the AWS CLI prints nothing: no staging folder is left
+PASS the AWS CLI prints null: the script stops
+PASS the AWS CLI prints null: every old file stays
+PASS the AWS CLI prints null: no staging folder is left
+PASS the AWS CLI prints None: the script stops
+PASS the AWS CLI prints None: every old file stays
+PASS the AWS CLI prints None: no staging folder is left
+PASS the password is null: the script stops
+PASS the password is null: every old file stays
+PASS the password is null: no staging folder is left
+PASS the password is empty: the script stops
+PASS the password is empty: every old file stays
+PASS the password is empty: no staging folder is left
+PASS the password is missing: the script stops
+PASS the password is missing: every old file stays
+PASS the password is missing: no staging folder is left
+PASS WordPress still works after the bad fetches
+PASS a good fetch works again
+
+RESULT: 0 failure(s)

@@ -1,0 +1,30 @@
+#!/bin/bash
+# Stands in for the AWS CLI in the local test: prints the SecretString of the
+# secret named in --secret-id from /fake, or misbehaves as /fake/mode says:
+#   fail   exits with an error, as the CLI does when it cannot reach AWS
+#   empty  prints nothing
+#   null   prints the JSON null
+#   none   prints None, the CLI's text output for a null value
+set -euo pipefail
+
+id=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --secret-id) id="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+mode="$(cat /fake/mode 2>/dev/null || echo ok)"
+case "$mode" in
+  fail) echo "An error occurred (InternalServiceError) when calling the GetSecretValue operation" >&2; exit 254 ;;
+  empty) exit 0 ;;
+  null) echo null; exit 0 ;;
+  none) echo None; exit 0 ;;
+esac
+
+case "$id" in
+  *'rds!db-'*) cat /fake/db.json ;;
+  *wordpress-keys*) cat /fake/keys.json ;;
+  *) echo "unknown secret: $id" >&2; exit 254 ;;
+esac

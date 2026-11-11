@@ -1,0 +1,152 @@
+#!/bin/bash
+# user_data for the WordPress instances. cloud-init runs it once, as root, on
+# the first boot. It installs Docker, writes a script that copies the
+# WordPress secrets from Secrets Manager into files, and has systemd run that
+# script every minute and run WordPress in a container.
+#
+# No secret appears in this file, on a command line or in a log. Never turn
+# on command tracing here: it would copy the secrets into the cloud-init log.
+set -euo pipefail
+
+dnf install -y docker jq
+systemctl enable --now docker
+
+# The script that copies the secrets into /run/wordpress, one file per value.
+# systemd runs it before WordPress starts and then every minute, so the
+# password that RDS rotates every week reaches WordPress within a minute.
+# /run is in memory, so the secrets never reach the disk.
+cat > /usr/local/sbin/wordpress-secrets <<'SCRIPT'
+#!/bin/bash
+set -euo pipefail
+umask 077
+
+db_secret_arn='${db_secret_arn}'
+keys_secret_arn='${keys_secret_arn}'
+dir=/run/wordpress
+
+# Inside the container, Apache runs as www-data, which has uid and gid 33.
+install -d -m 0500 -o 33 -g 33 "$dir"
+
+# New files go to a staging folder first, and replace the old ones only once
+# every value has been read and checked. A failed fetch, or a missing, null
+# or empty value, stops the script and leaves all the old files in place.
+stage="$(mktemp -d /run/wordpress-new.XXXXXX)"
+trap 'rm -rf "$stage"' EXIT
+
+# Prints the value of a secret. Secret values only pass through shell
+# variables, builtins and pipes, so they never show in the process list.
+read_secret() {
+  aws secretsmanager get-secret-value --region ${region} --secret-id "$1" --query SecretString --output text
+}
+
+# Prints one field of a secret's JSON, and fails if it is missing, null or
+# empty.
+field() {
+  local value
+  value="$(printf '%s' "$1" | jq -er --arg name "$2" '.[$name]')" || return 1
+  [ -n "$value" ] && [ "$value" != "null" ] || return 1
+  printf '%s' "$value"
+}
+
+# Stages one checked value as the file the container will read.
+stage_file() {
+  local value
+  value="$(field "$2" "$3")" || return 1
+  printf '%s' "$value" > "$stage/$1"
+  chown 33:33 "$stage/$1"
+  chmod 0400 "$stage/$1"
+}
+
+db="$(read_secret "$db_secret_arn")"
+keys="$(read_secret "$keys_secret_arn")"
+stage_file DB_USER "$db" username
+stage_file DB_PASSWORD "$db" password
+for name in ${join(" ", key_names)}; do
+  stage_file "$name" "$keys" "$name"
+done
+
+# /run/wordpress and the staging folder share one file system, so each
+# rename is atomic: WordPress never reads a half-written file.
+for file in "$stage"/*; do
+  mv -f "$file" "$dir/"
+done
+SCRIPT
+chmod 0700 /usr/local/sbin/wordpress-secrets
+
+# Settings for the container, one environment variable per line. The image's
+# wp-config.php reads each <name>_FILE setting from that file, on every
+# request. WordPress sees the Host origin.<domain>, so WP_HOME and WP_SITEURL
+# give it the public address, and MYSQL_CLIENT_FLAGS makes it connect to the
+# database over TLS. DISALLOW_FILE_MODS and AUTOMATIC_UPDATER_DISABLED stop
+# WordPress changing its own code: each instance has its own copy, so a
+# plugin or update installed from the dashboard would reach one instance
+# only. New code comes with a new image tag. It also stops a stolen admin
+# login from uploading PHP through the plugin installer.
+mkdir -p /etc/wordpress
+cat > /etc/wordpress/wordpress.env <<'ENV'
+WORDPRESS_DB_HOST=${db_address}:${db_port}
+WORDPRESS_DB_NAME=${db_name}
+%{ for name in concat(["DB_USER", "DB_PASSWORD"], key_names) ~}
+WORDPRESS_${name}_FILE=/run/secrets/wordpress/${name}
+%{ endfor ~}
+WORDPRESS_CONFIG_EXTRA=define('WP_HOME', 'https://${domain_name}'); define('WP_SITEURL', 'https://${domain_name}'); define('MYSQL_CLIENT_FLAGS', MYSQLI_CLIENT_SSL); define('DISALLOW_FILE_MODS', true); define('AUTOMATIC_UPDATER_DISABLED', true);
+ENV
+
+cat > /etc/systemd/system/wordpress-secrets.service <<'UNIT'
+[Unit]
+Description=Copy the WordPress secrets from Secrets Manager into files
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/wordpress-secrets
+UNIT
+
+cat > /etc/systemd/system/wordpress-secrets.timer <<'UNIT'
+[Unit]
+Description=Refresh the WordPress secret files every minute
+
+[Timer]
+OnCalendar=minutely
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
+UNIT
+
+# systemd fetches the secrets, then runs the container; it restarts the
+# container if it stops and starts it again after a reboot.
+# - The container mounts the folder of secret files, not single files: a
+#   single-file mount would keep showing the old file after each rename.
+# - The named volume keeps WordPress's files, uploads included, when the
+#   container restarts.
+# - Docker's default bridge network keeps the container away from the
+#   instance metadata (hop limit 1), so never put it on the host's network.
+# - Logs go to the systemd journal, which caps its own size.
+cat > /etc/systemd/system/wordpress.service <<'UNIT'
+[Unit]
+Description=WordPress container
+Requires=docker.service
+Wants=network-online.target
+After=docker.service network-online.target
+
+[Service]
+ExecStartPre=/usr/local/sbin/wordpress-secrets
+ExecStartPre=-/usr/bin/docker rm --force wordpress
+ExecStart=/usr/bin/docker run --rm --name wordpress \
+  --publish 80:80 \
+  --env-file /etc/wordpress/wordpress.env \
+  --volume /run/wordpress:/run/secrets/wordpress:ro \
+  --volume wordpress:/var/www/html \
+  --log-driver journald \
+  ${wordpress_image}
+ExecStop=/usr/bin/docker stop wordpress
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable --now wordpress-secrets.timer
+systemctl enable --now --no-block wordpress.service

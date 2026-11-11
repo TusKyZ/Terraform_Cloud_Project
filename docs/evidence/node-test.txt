@@ -1,0 +1,17 @@
+Initial commit, captured 2026-10-30 06:09 UTC, Git Bash on Windows 11
+$ node --test "tests/functions/*.test.cjs"
+✔ www gets a permanent redirect to the same path on the apex (0.468ms)
+✔ the query string survives the redirect as sent (0.0825ms)
+✔ a bare question mark is dropped (0.4731ms)
+✔ the host is matched without regard to case (0.0766ms)
+✔ the apex passes through unchanged (0.0818ms)
+✔ any other host passes through unchanged (0.0761ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 93.4267
+exit code: 0

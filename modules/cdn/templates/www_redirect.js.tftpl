@@ -1,0 +1,21 @@
+// CloudFront Function, run on every page request before CloudFront looks at
+// its cache. It sends visitors who ask for www.${domain_name} to the same path
+// and query on ${domain_name} with a permanent redirect, so the site has one
+// address. Every other request passes through unchanged. The domain comes
+// from Terraform, not from the request, so the function cannot redirect to
+// any other site.
+function handler(event) {
+  var request = event.request;
+  if (request.headers.host.value.toLowerCase() !== 'www.${domain_name}') {
+    return request;
+  }
+  // The query exactly as the visitor sent it; undefined or empty when none.
+  var query = request.rawQueryString();
+  return {
+    statusCode: 301,
+    statusDescription: 'Moved Permanently',
+    headers: {
+      location: { value: 'https://${domain_name}' + request.uri + (query ? '?' + query : '') }
+    }
+  };
+}

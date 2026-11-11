@@ -1,0 +1,160 @@
+Initial commit, captured 2026-10-30 06:09 UTC, Git Bash on Windows 11
+$ terraform test
+tests\alb.tftest.hcl... in progress
+  run "alb_is_internet_facing_in_the_public_subnets"... pass
+  run "alb_drops_invalid_headers_and_has_deletion_protection_by_default"... pass
+  run "throwaway_deploy_can_turn_off_deletion_protection"... pass
+  run "only_listener_is_https_443_with_a_default_403"... pass
+  run "target_group_is_http_80_with_a_health_check_on_the_home_page"... pass
+  run "only_requests_with_the_origin_secret_reach_the_instances"... pass
+  run "origin_name_points_at_the_alb"... pass
+  run "outputs_are_the_target_group_the_alb_and_the_origin_name"... pass
+  run "single_public_subnet_is_rejected"... pass
+  run "origin_secret_with_wildcards_is_rejected"... pass
+  run "short_origin_secret_is_rejected"... pass
+  run "domain_name_with_a_scheme_is_rejected"... pass
+tests\alb.tftest.hcl... tearing down
+tests\alb.tftest.hcl... pass
+tests\cdn.tftest.hcl... in progress
+  run "distribution_serves_the_apex_and_www"... pass
+  run "viewers_get_https_with_tls_1_2_or_newer"... pass
+  run "origin_is_the_alb_over_https_only"... pass
+  run "every_origin_request_carries_the_secret_header"... pass
+  run "pages_are_not_cached_and_the_host_header_is_not_forwarded"... pass
+  run "responses_get_security_headers"... pass
+  run "static_files_are_cached_at_the_edge"... pass
+  run "static_files_cache_key_includes_only_the_ver_query_string"... pass
+  run "apex_and_www_point_at_cloudfront"... pass
+  run "cloudfront_aliases_do_not_evaluate_target_health"... pass
+  run "www_page_requests_are_redirected_to_the_apex"... pass
+  run "outputs_are_the_distribution_id_and_domain_name"... pass
+  run "certificate_outside_us_east_1_is_rejected"... pass
+  run "origin_secret_with_wildcards_is_rejected"... pass
+  run "short_origin_secret_is_rejected"... pass
+  run "domain_name_with_a_quote_is_rejected"... pass
+tests\cdn.tftest.hcl... tearing down
+tests\cdn.tftest.hcl... pass
+tests\compute.tftest.hcl... in progress
+  run "only_ec2_can_assume_the_instance_role"... pass
+  run "instances_use_session_manager_instead_of_ssh"... pass
+  run "instances_can_read_only_their_two_secrets"... pass
+  run "wordpress_keys_are_generated_and_kept_out_of_the_state"... pass
+  run "launch_template_uses_the_latest_amazon_linux_2023_by_default"... pass
+  run "ami_id_pins_an_exact_ami"... pass
+  run "instances_are_t3_small_without_a_key_pair"... pass
+  run "instances_require_imdsv2_with_a_hop_limit_of_1"... pass
+  run "instances_get_no_public_ip_and_only_the_app_security_group"... pass
+  run "root_volume_is_encrypted_gp3"... pass
+  run "instances_run_as_the_instance_profile"... pass
+  run "instances_and_their_volumes_get_the_stack_tags"... pass
+  run "user_data_runs_the_pinned_image_on_port_80"... pass
+  run "user_data_hands_the_secrets_to_wordpress_only_through_files"... pass
+  run "user_data_refreshes_the_secret_files_every_minute"... pass
+  run "wordpress_uses_the_site_domain_and_tls_to_the_database"... pass
+  run "wordpress_cannot_change_its_own_code"... pass
+  run "docker_hub_form_of_the_image_is_accepted"... pass
+  run "latest_image_tag_is_rejected"... pass
+  run "image_without_a_tag_is_rejected"... pass
+  run "floating_minor_version_tag_is_rejected"... pass
+  run "fpm_variant_is_rejected"... pass
+  run "malformed_ami_id_is_rejected"... pass
+  run "uppercase_domain_name_is_rejected"... pass
+  run "group_runs_1_to_4_instances_across_both_app_subnets"... pass
+  run "group_replaces_instances_that_fail_the_alb_health_check"... pass
+  run "group_launches_the_newest_launch_template_version"... pass
+  run "launch_template_changes_roll_out_with_an_instance_refresh"... pass
+  run "group_gets_the_stack_tags"... pass
+  run "min_size_above_max_size_is_rejected"... pass
+  run "max_size_of_0_is_rejected"... pass
+  run "single_app_subnet_is_rejected"... pass
+  run "scale_out_policy_adds_one_instance"... pass
+  run "scale_in_policy_removes_one_instance"... pass
+  run "cpu_above_80_percent_for_30_minutes_adds_an_instance"... pass
+  run "cpu_below_40_percent_for_30_minutes_removes_an_instance"... pass
+  run "cpu_threshold_above_100_is_rejected"... pass
+  run "negative_cpu_threshold_is_rejected"... pass
+  run "scale_in_threshold_not_below_scale_out_is_rejected"... pass
+  run "outputs_are_the_group_name_and_the_role_arn"... pass
+tests\compute.tftest.hcl... tearing down
+tests\compute.tftest.hcl... pass
+tests\database.tftest.hcl... in progress
+  run "subnet_group_uses_the_db_subnets"... pass
+  run "database_is_mysql_8_4_on_db_t3_micro"... pass
+  run "database_is_private_behind_the_db_security_group"... pass
+  run "database_requires_tls_for_every_connection"... pass
+  run "database_is_multi_az_with_encrypted_gp3_storage"... pass
+  run "master_password_is_managed_by_rds"... pass
+  run "master_password_rotates_early_on_sunday_in_jakarta"... pass
+  run "backups_are_kept_for_7_days"... pass
+  run "error_log_goes_to_cloudwatch_logs"... pass
+  run "error_log_is_kept_for_365_days"... pass
+  run "deletion_protection_and_final_snapshot_are_on_by_default"... pass
+  run "throwaway_deploy_can_turn_off_deletion_protection_and_final_snapshot"... pass
+  run "outputs_are_the_connection_details_and_the_secret"... pass
+  run "single_db_subnet_is_rejected"... pass
+tests\database.tftest.hcl... tearing down
+tests\database.tftest.hcl... pass
+tests\dns.tftest.hcl... in progress
+  run "zone_is_public_and_for_the_domain"... pass
+  run "cloudfront_certificate_is_in_us_east_1_for_the_apex_and_www"... pass
+  run "alb_certificate_is_for_the_origin_name"... pass
+  run "each_domain_name_gets_its_validation_record_in_the_zone"... pass
+  run "each_validation_waits_for_its_own_certificate_and_records"... pass
+  run "outputs_are_the_zone_and_the_validated_certificates"... pass
+  run "domain_name_with_a_scheme_is_rejected"... pass
+  run "domain_name_with_a_trailing_dot_is_rejected"... pass
+  run "uppercase_domain_name_is_rejected"... pass
+  run "wildcard_domain_name_is_rejected"... pass
+tests\dns.tftest.hcl... tearing down
+tests\dns.tftest.hcl... pass
+tests\network.tftest.hcl... in progress
+  run "vpc_has_planned_cidr_dns_and_name"... pass
+  run "internet_gateway_is_attached_to_vpc"... pass
+  run "default_security_group_is_locked_down"... pass
+  run "default_network_acl_is_locked_down"... pass
+  run "subnets_have_planned_cidrs_azs_and_names"... pass
+  run "subnets_are_in_the_vpc"... pass
+  run "subnets_do_not_assign_public_ips"... pass
+  run "one_nat_gateway_and_elastic_ip_per_az"... pass
+  run "nat_gateways_use_their_own_az"... pass
+  run "public_route_table_sends_internet_traffic_to_the_internet_gateway"... pass
+  run "app_route_tables_use_the_nat_gateway_in_their_own_az"... pass
+  run "db_route_table_has_no_routes"... pass
+  run "route_tables_are_in_the_vpc_and_named"... pass
+  run "each_subnet_uses_its_tier_route_table"... pass
+  run "outputs_list_each_tier_in_the_order_of_azs"... pass
+  run "invalid_vpc_cidr_is_rejected"... pass
+  run "ipv6_vpc_cidr_is_rejected"... pass
+  run "single_az_is_rejected"... pass
+  run "duplicate_az_is_rejected"... pass
+  run "subnet_cidrs_must_match_azs"... pass
+  run "invalid_subnet_cidrs_are_rejected"... pass
+tests\network.tftest.hcl... tearing down
+tests\network.tftest.hcl... pass
+tests\root.tftest.hcl... in progress
+  run "network_gets_each_tier_from_tfvars"... pass
+  run "security_module_gives_its_security_group_ids"... pass
+  run "dns_module_gives_the_zone_and_validated_certificates"... pass
+  run "database_module_gives_its_connection_details_and_secret"... pass
+  run "alb_module_gives_its_target_group_and_origin_name"... pass
+  run "compute_module_gives_its_group_and_role"... pass
+  run "cdn_module_gives_its_distribution"... pass
+  run "outputs_show_the_site_and_where_its_parts_are"... pass
+tests\root.tftest.hcl... tearing down
+tests\root.tftest.hcl... pass
+tests\security.tftest.hcl... in progress
+  run "security_groups_are_in_the_vpc_and_named"... pass
+  run "security_group_rules_match_the_traffic_table"... pass
+  run "descriptions_use_only_characters_aws_allows"... pass
+  run "network_acls_are_in_the_vpc_named_and_on_their_tier_subnets"... pass
+  run "public_network_acl_allows_only_its_flows"... pass
+  run "app_network_acl_allows_only_its_flows"... pass
+  run "db_network_acl_allows_only_its_flows"... pass
+  run "outputs_are_the_security_group_ids"... pass
+  run "invalid_subnet_cidrs_are_rejected"... pass
+  run "empty_subnet_cidrs_are_rejected"... pass
+tests\security.tftest.hcl... tearing down
+tests\security.tftest.hcl... pass
+
+Success! 131 passed, 0 failed.
+exit code: 0
